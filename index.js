@@ -12,8 +12,6 @@ app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
 
 app.get('/', async (_req, res) => {
-     res.setHeader('Content-Type', 'text/html');
-     res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
      res.render('home.html');
 });
 
@@ -46,7 +44,6 @@ app.get('/search', async (req, res) => {
           const image = item.querySelector('img').src;
           data.push({ title, price, image, link, source: '/flipkart.png', rating });
      });
-
      res.render('items.html', { data });
 });
 
