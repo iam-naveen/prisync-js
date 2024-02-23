@@ -30,29 +30,28 @@ app.get('/search', async (req, res) => {
           const amazonContent = new JSDOM(await amazonResponse.text());
           const flipkartContent = new JSDOM(await flipkartResponse.text());
 
-          const amazonItems = Array.from(amazonContent.window.document.body.querySelectorAll('[data-component-type="s-search-result"]')).slice(0, 20);
-          const flipkartItems = Array.from(flipkartContent.window.document.body.querySelectorAll('._4ddWXP')).slice(0, 20);
-
-          const data = amazonItems.map(item => {
-               const title = item.querySelector('h2').textContent;
-               const link = "https://amazon.in" + item.querySelector('a').href;
-               const priceEle = item.querySelector('.a-price-whole');
+          const data = [];
+          const amazonItems = amazonContent.window.document.body.querySelectorAll('[data-component-type="s-search-result"]')
+          for(let i = 0; i < 20; i++) {
+               const title = amazonItems[i].querySelector('h2').textContent;
+               const link = "https://amazon.in" + amazonItems[i].querySelector('a').href;
+               const priceEle = amazonItems[i].querySelector('.a-price-whole');
                const price = priceEle ? priceEle.textContent : '-';
-               const image = item.querySelector('img').src;
-               const ratingEle = item.querySelector('span.a-icon-alt');
+               const image = amazonItems[i].querySelector('img').src;
+               const ratingEle = amazonItems[i].querySelector('span.a-icon-alt');
                const rating = ratingEle ? ratingEle.textContent : 'No rating';
-               return { title, price, image, link, source: '/Amazon.png', rating };
-          });
-
-          flipkartItems.forEach(item => {
-               const title = item.querySelector('.s1Q9rs').textContent;
-               const ratingEle = item.querySelector('._3LWZlK');
+               data.push({ title, price, image, link, source: '/Amazon.png', rating });
+          }
+          const flipkartItems = flipkartContent.window.document.body.querySelectorAll('._4ddWXP')
+          for(let i = 0; i < 20; i++) {
+               const title = flipkartItems[i].querySelector('.s1Q9rs').textContent;
+               const ratingEle = flipkartItems[i].querySelector('._3LWZlK');
                const rating = ratingEle ? ratingEle.textContent + " out of 5 stars" : 'No rating';
-               const link = "https://flipkart.com" + item.querySelector('.s1Q9rs').href;
-               const price = item.querySelector('._30jeq3').textContent;
-               const image = item.querySelector('img').src;
+               const link = "https://flipkart.com" + flipkartItems[i].querySelector('.s1Q9rs').href;
+               const price = flipkartItems[i].querySelector('._30jeq3').textContent;
+               const image = flipkartItems[i].querySelector('img').src;
                data.push({ title, price, image, link, source: '/flipkart.png', rating });
-          });
+          }
 
           res.render('items.html', { data });
      } catch (error) {
