@@ -2,77 +2,74 @@ import express from 'express';
 import path from 'path';
 import ejs from 'ejs';
 import { JSDOM } from 'jsdom';
+import {getAmazonData, getFlipkartData} from './utils/scrape.js';
 
+// This is some biolerplate code to setup the express server
 const __dirname = path.resolve();
 const app = express();
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', path.join(__dirname, 'views'));
 app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
 
+// This handles the get request to the '/' route
 app.get('/', async (_req, res) => {
-     res.render('home.html');
+  res.render('home.html');
 });
 
+// This handles the get request to the '/search' route
 app.get('/search', async (req, res) => {
-     const keyword = req.query.k;
-     if (!keyword) {
-          return res.send('Please provide a search keyword');
-     }
 
-     const [amazonResponse, flipkartResponse] = await Promise.all([
-          fetch(`https://www.amazon.in/s?k=${keyword}`),
-          fetch(`https://www.flipkart.com/search?q=${keyword}`)
-     ]).catch(error => {
-          console.error('Error fetching data:', error);
-     });
+  // Get the keyword from the query parameter
+  const keyword = req.query.k;
+  if (!keyword) {
+    return res.send('Please provide a search keyword');
+  }
 
-     console.log("got the data...");
+  // Fetch the data from the amazon and flipkart websites
+  // with the keyword that is received from the query parameter
+  const [amazonResponse, flipkartResponse] = await Promise.all([
+    fetch(`https://www.amazon.in/s?k=${keyword}`),
+    fetch(`https://www.flipkart.com/search?q=${keyword}`)
+  ])
+  .catch(error => {
+    console.error('Error fetching data:', error);
+  });
 
-     const amazonContent = new JSDOM(await amazonResponse.text());
-     const flipkartContent = new JSDOM(await flipkartResponse.text());
+  console.log(`got the data for ${keyword}...`);
 
-     console.log("parsing done...");
+  // Parse the response and create a DOM object / HTML Page
+  // from the response, this is done to find the elements 
+  // easily using the normal DOM methods such as 'querySelector'
+  const amazonPage = new JSDOM(await amazonResponse.text()).window.document;
+  const flipkartPage = new JSDOM(await flipkartResponse.text()).window.document;
 
-     const data = [];
-     try {
-          const amazonItems = amazonContent.window.document.body.querySelectorAll('[data-component-type="s-search-result"]')
-          for (let i = 0; i < 20; i++) {
-               const title = amazonItems[i].querySelector('h2').textContent;
-               const link = "https://amazon.in" + amazonItems[i].querySelector('a').href;
-               const priceEle = amazonItems[i].querySelector('.a-price-whole');
-               const price = priceEle ? priceEle.textContent : '-';
-               const image = amazonItems[i].querySelector('img').src;
-               const ratingEle = amazonItems[i].querySelector('span.a-icon-alt');
-               const rating = ratingEle ? ratingEle.textContent : 'No rating';
-               data.push({ title, price, image, link, source: '/Amazon.png', rating });
-          }
-          console.log("amazon done...");
-     } catch (error) {
-          console.log("error in amazon", error);
-     }
+  console.log("parsing done...");
 
-     try {
-          const flipkartItems = flipkartContent.window.document.body.querySelectorAll('._4ddWXP')
-          for (let i = 0; i < 20; i++) {
-               const title = flipkartItems[i].querySelector('.s1Q9rs').textContent;
-               const ratingEle = flipkartItems[i].querySelector('._3LWZlK');
-               const rating = ratingEle ? ratingEle.textContent + " out of 5 stars" : 'No rating';
-               const link = "https://flipkart.com" + flipkartItems[i].querySelector('.s1Q9rs').href;
-               const price = flipkartItems[i].querySelector('._30jeq3').textContent;
-               const image = flipkartItems[i].querySelector('img').src;
-               data.push({ title, price, image, link, source: '/flipkart.png', rating });
-          }
-          console.log("flipkart done...");
-     } catch (error) {
-          console.log("error in flipkart", error);
-     }
+  // This object is used to keep track 
+  // of the sources and whether the data is fetched or not
+  const sources = { amazon: false, flipkart: false }
 
-     console.log("sending results...\n\n");
-     res.render('items.html', { data });
+  // This array is used to store the data,
+  // that we are going to extract from the DOM we just created
+  const data = [];
+
+  // Get the data from the amazon and add it to the data array
+  getAmazonData(amazonPage, data, sources);
+
+  // Get the data from the flipkart and add it to the data array
+  getFlipkartData(flipkartPage, data, sources);
+
+  console.log("sending results...\n\n");
+
+  // Use the scraped data to render the items.html page
+  // and send it as a response to the client
+  res.render('items.html', { data, sources, keyword });
 });
-const port = process.env.PORT || 3001;
+
+// This is the port where the server will run
+const port = process.env.PORT || 3000;
+// Start the server
 app.listen(port, () => {
-     console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });

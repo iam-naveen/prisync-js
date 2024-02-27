@@ -5,34 +5,57 @@
      <title></title>
      <meta charset="UTF-8">
      <meta name="viewport" content="width=device-width, initial-scale=1">
-     <script src="https://cdn.tailwindcss.com"></script>
+     <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<body class="container text-blue-900 flex flex-row flex-wrap min-w-full justify-center">
-     <% data.forEach(function(item) { %>
-          <a href="<%= item.link %>" target="#" class="text-white hover:text-white">
-               <div
-                    class="w-[400px] h-[150px] m-5 p-2 flex bg-slate-600 hover:text-slate-300 hover:bg-slate-700 rounded-lg">
-                    <div class="card-img w-[30%] max-h-full bg-slate-400 rounded-lg overflow-hidden">
-                         <img src="<%= item.image %>" class="w-full h-full" alt="card-image" />
-                    </div>
-                    <div class="card-body flex flex-col justify-between p-3 w-[70%] h-full">
-                         <h2 class="card-title text-md overflow-hidden whitespace-nowrap">
-                              <%= item.title %>
-                         </h2>
-                         <p class="card-text text-2xl text-white place-items-center">
-                              Rs. <%= item.price %>
-                         </p>
-                         <p class="card-text flex gap-10 justify-center items-center">
-                              <span class="rating">
-                                   <%= item.rating %>
-                              </span>
-                              <img src="<%= item.source %>" alt="source logo" class="w-20 object-fill" />
-                         </p>
-                    </div>
-               </div>
-          </a>
-          <% }); %>
+<body class="flex m-0 p-0 min-w-full min-h-screen flex-col items-center justify-center">
+    <header class="flex items-center p-10 w-full justify-between flex-col sm:flex-row gap-5">
+         <form method="GET" action="/search" class="flex items-center justify-center gap-3">
+              <input type="text" name="k" placeholder="search for product here..." class="p-3 min-w-64 border rounded-lg" />
+              <button type="submit" class="bg-blue-500 text-white p-3 rounded-lg"> Search </button>
+         </form>
+         <div class="relative group w-fit border p-2 rounded-lg cursor-pointer">
+              show sources
+              <ul class="hidden group-hover:block p-2 rounded-b-lg absolute top-[100%] right-0 border bg-white w-full">
+                   <% Object.keys(sources).forEach(source=> { %>
+                        <li class="<%= sources[source]==true? 'text-green-400' : 'text-red-400' %>">
+                             <%= source %>
+                        </li>
+                   <% }); %>
+              </ul>
+         </div>
+    </header>
+    <h1 class="w-full text-center text-xl my-5"> Search results for <%= keyword %> </h1>
+     <main class="container flex flex-row flex-wrap min-w-full justify-center">
+          <% if(data.length !==0){ %>
+               <% data.forEach(function(item) { %>
+                    <a href="<%= item.link %>" target="#" class="text-white hover:text-white">
+                         <div
+                              class="w-[400px] h-[150px] m-5 p-2 flex bg-slate-600 hover:text-slate-300 hover:bg-slate-700 rounded-lg">
+                              <div class="card-img w-[30%] max-h-full bg-slate-400 rounded-lg overflow-hidden">
+                                   <img src="<%= item.image %>" class="w-full h-full" alt="card-image" />
+                              </div>
+                              <div class="card-body flex flex-col justify-between p-3 w-[70%] h-full">
+                                   <h2 class="card-title text-md overflow-hidden whitespace-nowrap">
+                                        <%= item.title %>
+                                   </h2>
+                                   <p class="card-text text-2xl text-white place-items-center">
+                                       <%= item.price %>
+                                   </p>
+                                   <p class="card-text flex gap-10 justify-center items-center">
+                                        <span class="rating">
+                                             <%= item.rating %>
+                                        </span>
+                                        <img src="<%= item.source %>" alt="source logo" class="w-20 object-fill" />
+                                   </p>
+                              </div>
+                         </div>
+                    </a>
+                    <% }); %>
+          <% } else{ %>
+               <h1>Cannot retrieve data</h1>
+          <% } %>
+     </main>
 </body>
 
 </html>
